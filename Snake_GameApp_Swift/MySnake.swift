@@ -13,6 +13,6 @@ class MySnake: NSObject {
     var lives: Int = 3
     var length: Int = 0
     var direction: String = ""
-    var score: Int = 0
+    var score: Double = 0
 
 }

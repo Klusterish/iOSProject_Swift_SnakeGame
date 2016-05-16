@@ -16,12 +16,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var leftWall = SKSpriteNode()
     var rightWall = SKSpriteNode()
     var fruit = SKSpriteNode()
-    //var ground = SKSpriteNode()
-    //var groundTest = SKSpriteNode()
     var playerSnake = MySnake()
-    //var backGround = SKSpriteNode()
     var snakeSpeed: CGFloat = 2
     var middlePosition: CGPoint = CGPointMake(0, 0)
+    var scoreLabel = SKLabelNode()
     
     enum ColliderType: UInt32 {
         case Snake = 2
@@ -35,30 +33,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         self.physicsWorld.contactDelegate = self
         
         spawnFruit()
+        intersection()
         
         middlePosition = CGPointMake(CGRectGetMidX(self.frame), CGRectGetMidY(self.frame))
-        
-        //let backGroundTexture = SKTexture(imageNamed: "background.png")
-        //backGround = SKSpriteNode(texture: backGroundTexture)
-        //backGround.position = CGPointMake(CGRectGetMidX(self.frame), CGRectGetMidY(self.frame))
-        //backGround.size = self.frame.size
-        
-        //self.addChild(backGround)
-        
-        /*
-        let snakeTexture = SKTexture(imageNamed: "snake.png")
-        
-        snake = SKSpriteNode(texture: snakeTexture)
-        snake.physicsBody = SKPhysicsBody(circleOfRadius: snakeTexture.size().height/3)
-        snake.physicsBody?.dynamic = false
-        snake.position = CGPoint(x: CGRectGetMidX(self.frame), y: CGRectGetMidY(self.frame))
-        
-        /*snake.physicsBody!.categoryBitMask = ColliderType.Snake.rawValue
-        snake.physicsBody!.contactTestBitMask = ColliderType.Object.rawValue
-        snake.physicsBody!.collisionBitMask = ColliderType.Snake.rawValue*/
-        
-        self.addChild(snake)
-        */
         
         snake = (self.childNodeWithName("playerSnake") as? SKSpriteNode)!
         topWall = (self.childNodeWithName("topWall") as? SKSpriteNode)!
@@ -66,46 +43,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         leftWall = (self.childNodeWithName("leftWall") as? SKSpriteNode)!
         rightWall = (self.childNodeWithName("rightWall") as? SKSpriteNode)!
         
+        scoreLabel.fontName = "Helvetica"
+        scoreLabel.fontSize = 50
+        scoreLabel.text = String(playerSnake.score)
+        scoreLabel.position = CGPointMake(CGRectGetMidX(self.frame), self.frame.size.height - 70)
         
-        /*
-        snake.physicsBody!.categoryBitMask = ColliderType.Snake.rawValue
-        snake.physicsBody!.contactTestBitMask = ColliderType.Object.rawValue
-        snake.physicsBody!.collisionBitMask = ColliderType.Snake.rawValue
-        
-        
-        topWall.physicsBody!.categoryBitMask = ColliderType.Object.rawValue
-        topWall.physicsBody!.contactTestBitMask = ColliderType.Object.rawValue
-        topWall.physicsBody!.collisionBitMask = ColliderType.Object.rawValue
-        
-        
-        bottomWall.physicsBody!.categoryBitMask = ColliderType.Object.rawValue
-        bottomWall.physicsBody!.contactTestBitMask = ColliderType.Object.rawValue
-        bottomWall.physicsBody!.collisionBitMask = ColliderType.Object.rawValue
-        
-        
-        leftWall.physicsBody!.categoryBitMask = ColliderType.Object.rawValue
-        leftWall.physicsBody!.contactTestBitMask = ColliderType.Object.rawValue
-        leftWall.physicsBody!.collisionBitMask = ColliderType.Object.rawValue
-        
-        
-        rightWall.physicsBody!.categoryBitMask = ColliderType.Object.rawValue
-        rightWall.physicsBody!.contactTestBitMask = ColliderType.Object.rawValue
-        rightWall.physicsBody!.collisionBitMask = ColliderType.Object.rawValue
-        */
-        
-        
-        /*groundTest = SKSpriteNode()
-        
-        let groundTexture = SKTexture(imageNamed: "groundTest.png")
-        
-        ground = SKSpriteNode(texture: groundTexture)
-        ground.position = CGPointMake(1, 1)
-        ground.physicsBody = SKPhysicsBody(edgeLoopFromRect: self.frame)
-        ground.physicsBody?.dynamic = true
-        ground.physicsBody?.affectedByGravity = false
-        ground.physicsBody?.friction = 1
-        
-        self.addChild(ground)*/
+        self.addChild(scoreLabel)
         
         let swipeRight:UISwipeGestureRecognizer = UISwipeGestureRecognizer(target: self, action: Selector("swipedRight:"))
         swipeRight.direction = .Right
@@ -167,6 +110,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         print("swiped down")
     }
     
+    /* Checks if two physical bodies engage in contact */
     func didBeginContact(contact: SKPhysicsContact) {
         print("WE HAVE CONTACT")
         print(contact.bodyA.categoryBitMask, contact.bodyB.categoryBitMask)
@@ -177,21 +121,25 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             increasePlayerScoreAndSpeed()
         }
         
-        if contact.bodyA.categoryBitMask == 1 {
+        else if contact.bodyA.categoryBitMask == 1 {
             resetSnakeposition()
+            playerSnake.score = 1
+            snakeSpeed = 2
+            scoreLabel.text = String(playerSnake.score)
         }
         
-        if contact.bodyA.categoryBitMask == 2 && contact.bodyB.categoryBitMask == 3 {
+        else if contact.bodyA.categoryBitMask == 2 && contact.bodyB.categoryBitMask == 3 {
             spawnFruit()
         }
         
-        if contact.bodyA.categoryBitMask == 3 && contact.bodyB.categoryBitMask == 2 {
+        else if contact.bodyA.categoryBitMask == 3 && contact.bodyB.categoryBitMask == 2 {
             spawnFruit()
         }
         
         
     }
     
+    /* Resets snake position to the middle of the screen (Includes a workaround for spritekit bug)*/
     func resetSnakeposition() {
         playerSnake.direction = ""
         let backupPhysicsBody:SKPhysicsBody = snake.physicsBody!
@@ -200,6 +148,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         snake.physicsBody = backupPhysicsBody
     }
     
+    
+    /* Spawns fruit at random location on the screen */
     func spawnFruit() {
         let xPos = randomBetweenNumbers(0, secondNum: frame.width)
         let yPos = randomBetweenNumbers(0, secondNum: frame.height)
@@ -209,12 +159,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         fruit.physicsBody = nil
         fruit.position = CGPointMake(CGFloat(xPos), CGFloat(yPos))
         fruit.physicsBody = backUpPhysicsBody
+        intersection()
+        intersection()
     }
     
+    /* Increases player speed with each eaten fruit */
     func increasePlayerScoreAndSpeed() {
         playerSnake.score += 1
-        snakeSpeed = snakeSpeed + 0.05
-        print(snakeSpeed)
+        snakeSpeed += 0.2
+        
+        scoreLabel.text = String(playerSnake.score)
+        print("Snake speed is \(snakeSpeed)")
         print(playerSnake.score)
     }
     /* Helper method to get random point in frame */
@@ -226,6 +181,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     /* Forces our snake to constantly move depending on direction */
     override func update(currentTime: CFTimeInterval) {
+        
         var pos = snake.position
         
         if playerSnake.direction == "down" {
@@ -243,5 +199,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
-    
+    func intersection() {
+        if fruit.frame.intersects(topWall.frame) {
+            spawnFruit()
+        }
+        if fruit.frame.intersects(bottomWall.frame) {
+            spawnFruit()
+        }
+        if fruit.frame.intersects(leftWall.frame) {
+            spawnFruit()
+        }
+        if fruit.frame.intersects(rightWall.frame) {
+            spawnFruit()
+        }
+    }
 }
