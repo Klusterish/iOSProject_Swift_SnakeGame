@@ -11,6 +11,7 @@ import SpriteKit
 class GameScene: SKScene, SKPhysicsContactDelegate {
     
     var snake = SKSpriteNode()
+    var bodySnake = SKSpriteNode()
     var topWall = SKSpriteNode()
     var bottomWall = SKSpriteNode()
     var leftWall = SKSpriteNode()
@@ -18,16 +19,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var fruit = SKSpriteNode()
     var playerSnake = MySnake()
     var snakeSpeed: CGFloat = 2
-    var middlePosition: CGPoint = CGPointMake(0, 0)
+    var middlePosition: CGPoint = CGPoint(x: 0, y: 0)
     var scoreLabel = SKLabelNode()
     
     enum ColliderType: UInt32 {
-        case Snake = 2
-        case Object = 1
-        case Fruit = 3
+        case snake = 2
+        case object = 1
+        case fruit = 3
     }
     
-    override func didMoveToView(view: SKView) {
+    override func didMove(to view: SKView) {
         /* Setup your scene here */
         
         self.physicsWorld.contactDelegate = self
@@ -35,48 +36,56 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         spawnFruit()
         intersection()
         
-        middlePosition = CGPointMake(CGRectGetMidX(self.frame), CGRectGetMidY(self.frame))
+        middlePosition = CGPoint(x: self.frame.midX, y: self.frame.midY)
         
-        snake = (self.childNodeWithName("playerSnake") as? SKSpriteNode)!
-        topWall = (self.childNodeWithName("topWall") as? SKSpriteNode)!
-        bottomWall = (self.childNodeWithName("bottomWall") as? SKSpriteNode)!
-        leftWall = (self.childNodeWithName("leftWall") as? SKSpriteNode)!
-        rightWall = (self.childNodeWithName("rightWall") as? SKSpriteNode)!
+        snake = (self.childNode(withName: "playerSnake") as? SKSpriteNode)!
+        bodySnake = (self.childNode(withName: "playerSnake") as? SKSpriteNode)!
+        topWall = (self.childNode(withName: "topWall") as? SKSpriteNode)!
+        bottomWall = (self.childNode(withName: "bottomWall") as? SKSpriteNode)!
+        leftWall = (self.childNode(withName: "leftWall") as? SKSpriteNode)!
+        rightWall = (self.childNode(withName: "rightWall") as? SKSpriteNode)!
         
         scoreLabel.fontName = "Helvetica"
         scoreLabel.fontSize = 50
         scoreLabel.text = String(playerSnake.score)
-        scoreLabel.position = CGPointMake(CGRectGetMidX(self.frame), self.frame.size.height - 70)
+        scoreLabel.position = CGPoint(x: self.frame.midX, y: self.frame.size.height - 70)
         
         self.addChild(scoreLabel)
         
-        let swipeRight:UISwipeGestureRecognizer = UISwipeGestureRecognizer(target: self, action: Selector("swipedRight:"))
-        swipeRight.direction = .Right
+        let swipeRight:UISwipeGestureRecognizer = UISwipeGestureRecognizer(target: self, action: #selector(GameScene.swipedRight(_:)))
+        swipeRight.direction = .right
         view.addGestureRecognizer(swipeRight)
         
-        let swipeLeft:UISwipeGestureRecognizer = UISwipeGestureRecognizer(target: self, action: Selector("swipedLeft:"))
-        swipeLeft.direction = .Left
+        let swipeLeft:UISwipeGestureRecognizer = UISwipeGestureRecognizer(target: self, action: #selector(GameScene.swipedLeft(_:)))
+        swipeLeft.direction = .left
         view.addGestureRecognizer(swipeLeft)
         
-        let swipeDown:UISwipeGestureRecognizer = UISwipeGestureRecognizer(target: self, action: Selector("swipedDown:"))
-        swipeDown.direction = .Down
+        let swipeDown:UISwipeGestureRecognizer = UISwipeGestureRecognizer(target: self, action: #selector(GameScene.swipedDown(_:)))
+        swipeDown.direction = .down
         view.addGestureRecognizer(swipeDown)
         
-        let swipeUp:UISwipeGestureRecognizer = UISwipeGestureRecognizer(target: self, action: Selector("swipedUp:"))
-        swipeUp.direction = .Up
+        let swipeUp:UISwipeGestureRecognizer = UISwipeGestureRecognizer(target: self, action: #selector(GameScene.swipedUp(_:)))
+        swipeUp.direction = .up
         view.addGestureRecognizer(swipeUp)
+        
+        let rangeToHead = SKRange(lowerLimit: 100.0, upperLimit: 150.0)
+        let distanceConstraint = SKConstraint.distance(rangeToHead, to: #imageLiteral(resourceName: "snake"))
+        
+        let rangeForOrientation = SKRange(lowerLimit: CGFloat(M_2_PI*7), upperLimit: CGFloat(M_2_PI*7))
+        let orientConstraint = SKConstraint.orientToNode(#imageLiteral(resourceName: "snake"), offset: rangeForOrientation)
+        bodySnake.constraints = [orientConstraint, distanceConstraint]
         
         print("\(self.frame)")
         print("\(view.frame)")
     }
     
-    override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) {
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
        /* Called when a touch begins */
         
     }
     
     /* One of each Swipe recognizers that change our direction */
-    func swipedRight (sender:UISwipeGestureRecognizer) {
+    func swipedRight (_ sender:UISwipeGestureRecognizer) {
         if playerSnake.direction == "left" {
             print("cant go right from left direction")
         } else {
@@ -84,7 +93,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         print("swiped right")
     }
-    func swipedLeft (sender:UISwipeGestureRecognizer) {
+    func swipedLeft (_ sender:UISwipeGestureRecognizer) {
         if playerSnake.direction == "right" {
             print("cant go left from right direction")
         } else {
@@ -92,7 +101,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         print("swiped left")
     }
-    func swipedUp (sender:UISwipeGestureRecognizer) {
+    func swipedUp (_ sender:UISwipeGestureRecognizer) {
         if playerSnake.direction == "down" {
             print("cant go up from down direction")
         } else {
@@ -100,7 +109,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         print("swiped up")
     }
-    func swipedDown (sender:UISwipeGestureRecognizer) {
+    func swipedDown (_ sender:UISwipeGestureRecognizer) {
         
         if playerSnake.direction == "up" {
         print("cant go down from up direction")
@@ -111,14 +120,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     /* Checks if two physical bodies engage in contact */
-    func didBeginContact(contact: SKPhysicsContact) {
+    func didBegin(_ contact: SKPhysicsContact) {
         print("WE HAVE CONTACT")
         print(contact.bodyA.categoryBitMask, contact.bodyB.categoryBitMask)
+        let didTouchThisContact = false;
         
         
         if contact.bodyB.categoryBitMask == 3 {
-            spawnFruit()
-            increasePlayerScoreAndSpeed()
+            if didTouchThisContact {
+                spawnFruit()
+                increasePlayerScoreAndSpeed()
+            }
         }
         
         else if contact.bodyA.categoryBitMask == 1 {
@@ -154,10 +166,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let xPos = randomBetweenNumbers(0, secondNum: frame.width)
         let yPos = randomBetweenNumbers(0, secondNum: frame.height)
         
-        fruit = (self.childNodeWithName("fruit") as? SKSpriteNode)!
+        fruit = (self.childNode(withName: "fruit") as? SKSpriteNode)!
         let backUpPhysicsBody: SKPhysicsBody = fruit.physicsBody!
         fruit.physicsBody = nil
-        fruit.position = CGPointMake(CGFloat(xPos), CGFloat(yPos))
+        fruit.position = CGPoint(x: CGFloat(xPos), y: CGFloat(yPos))
         fruit.physicsBody = backUpPhysicsBody
         intersection()
         intersection()
@@ -166,21 +178,22 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     /* Increases player speed with each eaten fruit */
     func increasePlayerScoreAndSpeed() {
         playerSnake.score += 1
-        snakeSpeed += 0.2
+        snakeSpeed += 1
         
         scoreLabel.text = String(playerSnake.score)
         print("Snake speed is \(snakeSpeed)")
         print(playerSnake.score)
     }
+    
     /* Helper method to get random point in frame */
-    func randomBetweenNumbers(firstNum: CGFloat, secondNum: CGFloat) -> CGFloat {
+    func randomBetweenNumbers(_ firstNum: CGFloat, secondNum: CGFloat) -> CGFloat {
         return CGFloat(arc4random())/CGFloat(UINT32_MAX) * abs(firstNum - secondNum) + min(firstNum, secondNum)
         
     }
     
     
     /* Forces our snake to constantly move depending on direction */
-    override func update(currentTime: CFTimeInterval) {
+    override func update(_ currentTime: TimeInterval) {
         
         var pos = snake.position
         
